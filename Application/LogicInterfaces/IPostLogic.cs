@@ -1,12 +1,13 @@
-﻿using Domain.Models;
+﻿using Application.Logic;
+using Domain.DTOs;
+using Domain.Models;
 
 namespace Application.LogicInterfaces;
 
 public interface IPostLogic
 {
-    Task<List<Post>> GetPostsAsync();
-    Task<Post> GetPostAsync(int id);
-    Task<Post> AddPostAsync(Post post);
-    Task<Post> UpdatePostAsync(Post post);
-    Task<Post> DeletePostAsync(int id);
+    Task<Post> CreateAsync(PostCreationDto dto);
+    Task<Post> UpdateAsync(PostUpdateDto post);
+    Task<Post> DeleteAsync(int id);
+    Task<IEnumerable<Post>> GetPostAsync(SearchPostParametersDto searchParameters);
 }

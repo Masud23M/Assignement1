@@ -1,10 +1,11 @@
 ﻿using Application.DaoInterfaces;
+using Application.LogicInterfaces;
 using Domain.DTOs;
 using Domain.Models;
 
 namespace Application.Logic;
 
-public class PostLogic
+public class PostLogic: IPostLogic
 {
     private readonly IPostDao postDao;
 
@@ -15,15 +16,19 @@ public class PostLogic
     
     public async Task<Post> CreateAsync(PostCreationDto postToCreate)
     {
-        Post toCreate = new Post()
+        Post? existing = await postDao.GetPostsByAuthorAsync(postToCreate.AuthorId);
+        if (existing != null)
         {
-            Title = postToCreate.Title,
-            Content = postToCreate.Content,
+            throw new Exception("Username already taken!");
+        }
+
+        ValidateData(postToCreate);
+        Post toCreate = new Post
+        {
             AuthorId = postToCreate.AuthorId
         };
 
-        Post created = await postDao.AddPostAsync(toCreate);
-
+        Post created = await postDao.CreateAsync(toCreate);
         return created;
     }
     
@@ -49,33 +54,37 @@ public class PostLogic
         return deleted;
     }
     
-    public async Task<Post> GetAsync(int id)
+    public Task<IEnumerable<Post>> GetPostAsync(SearchPostParametersDto searchParameters)
     {
-        Post? post = await postDao.GetPostAsync(id);
-        if (post == null)
-        {
-            throw new Exception("Post not found!");
-        }
-
-        return post;
+        return postDao.GetPostAsync(searchParameters);
     }
     
-    public async Task<List<Post>> GetPostsAsync()
-    {
+    /*
+     * public async Task<List<Post>> GetPostsAsync()
+     * {
         List<Post> posts = await postDao.GetPostsAsync();
 
         return posts;
     }
+     */
     
-    public async Task<List<Post>> GetPostsByAuthorAsync(int authorId)
+    
+    public async Task<List<Post>> GetPostsByAuthorAndTitleAsync(int authorId)
     {
-        List<Post> posts = await postDao.GetPostsAsync();
+        throw new NotImplementedException();
+    }
+    /*
+     * public async Task<List<Post>> GetPostsByAuthorAsync(int authorId)
+     * {
+        List<Post> posts = await postDao.GetPostsByAuthorAsync(authorId);
         List<Post> postsByAuthor = posts.Where(p => p.AuthorId == (object)authorId).ToList();
 
         return postsByAuthor;
     }
+     */
     
-    public async Task<List<Post>> GetPostsByTitleAsync(string title)
+   /*
+    *  public async Task<List<Post>> GetPostsByTitleAsync(string title)
     {
         List<Post> posts = await postDao.GetPostsAsync();
         List<Post> postsByTitle = posts.Where(p => p.Title.Contains(title)).ToList();
@@ -90,10 +99,28 @@ public class PostLogic
 
         return postsByContent;
     }
+    */
+   
     
     public Task<List<Post>> GetPostsByAuthorAndTitleAsync(int authorId, string title)
     {
         throw new NotImplementedException();
+    }
+    
+    private static void ValidateData(PostCreationDto postToCreate)
+    {
+        string title = postToCreate.Title;
+        string content = postToCreate.Content;
+
+        if (title.Length is < 3 or > 15)
+        {
+            throw new Exception("Title must be between 3 and 15 characters");
+        }
+
+        if (content.Length is < 3 or > 15)
+        {
+            throw new Exception("Content must be between 3 and 15 characters");
+        }
     }
 }
 
@@ -104,3 +131,4 @@ public class PostUpdateDto
     public string Content { get; set; } = null!;
     public int AuthorId { get; set; }
 }
+
